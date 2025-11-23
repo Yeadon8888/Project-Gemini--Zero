@@ -1,4 +1,5 @@
 import GameScene from './scenes/GameScene.js';
+import MainMenuScene from './scenes/MainMenuScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -12,7 +13,7 @@ const config = {
             debug: false  // Enable to see collision boxes
         }
     },
-    scene: [GameScene]
+    scene: [MainMenuScene, GameScene]
 };
 
 const game = new Phaser.Game(config);

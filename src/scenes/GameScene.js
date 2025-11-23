@@ -66,8 +66,8 @@ export default class GameScene extends Phaser.Scene {
         // 6. UI
         this.createUI();
 
-        // 7. Music
-        this.music = this.sound.add('music', { loop: true, volume: 0.5 });
+        // 7. Music (Handled in startGame)
+        // this.music = this.sound.add('music', { loop: true, volume: 0.5 });
 
         // 8. Input
         this.input.keyboard.on('keydown-SPACE', () => {
@@ -78,6 +78,9 @@ export default class GameScene extends Phaser.Scene {
 
         // Attack Input (Z key)
         this.zKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+
+        // Auto Start
+        this.startGame();
     }
 
     createGround() {
@@ -176,8 +179,8 @@ export default class GameScene extends Phaser.Scene {
         // Attack charges display
         this.attackText = this.add.text(16, 80, '⚔ Attacks: 5/5', { fontSize: '20px', fill: '#00ff00' });
 
-        // Start Overlay
-        this.startText = this.add.text(400, 300, 'CLICK TO START', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+        // Start Overlay - REMOVED
+        // this.startText = this.add.text(400, 300, 'CLICK TO START', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
 
         // Game Over Overlay
         this.gameOverText = this.add.text(400, 250, 'GAME OVER', { fontSize: '48px', fill: '#ff0000' }).setOrigin(0.5).setVisible(false);
@@ -196,18 +199,28 @@ export default class GameScene extends Phaser.Scene {
             fontFamily: 'monospace'
         }).setOrigin(1, 1);
 
-        // Click to Start
-        this.input.on('pointerdown', () => {
-            if (!this.isGameRunning && !this.isGameOver) {
-                this.startGame();
-            }
-        });
+        // Click to Start - REMOVED (Auto start)
+        // this.input.on('pointerdown', () => {
+        //     if (!this.isGameRunning && !this.isGameOver) {
+        //         this.startGame();
+        //     }
+        // });
     }
 
     startGame() {
         this.isGameRunning = true;
-        this.startText.setVisible(false);
-        this.music.play();
+        // this.startText.setVisible(false); // Removed
+
+        // Music Logic: Only play if not already playing (seamless transition)
+        if (!this.sound.get('music')) {
+            this.music = this.sound.add('music', { loop: true, volume: 0.5 });
+            this.music.play();
+        } else if (!this.sound.get('music').isPlaying) {
+            this.sound.get('music').play();
+        } else {
+            // Already playing, just assign reference
+            this.music = this.sound.get('music');
+        }
 
         // Reset attack charges
         this.attackCharges = this.maxAttackCharges;
