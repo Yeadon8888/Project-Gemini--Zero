@@ -276,22 +276,11 @@ export default class GameScene extends Phaser.Scene {
             }
 
             // ========== 动态难度调整 ==========
-            // 每500分，怪物生成间隔减少200ms (更频繁)
-            if (this.score % 500 === 0 && this.score > 0) {
-                this.spawnDelay = Math.max(this.minSpawnDelay, this.spawnDelay - 200);
+            // 每1000分，怪物生成间隔减少150ms (更平滑的难度提升)
+            if (this.score % 1000 === 0 && this.score > 0) {
+                this.spawnDelay = Math.max(this.minSpawnDelay, this.spawnDelay - 150);
                 this.spawnTimer.delay = this.spawnDelay;
                 console.log(`难度提升！生成间隔: ${this.spawnDelay}ms`);
-            }
-
-            // 高分段：随机连续生成多个怪物
-            if (this.score > 2000 && this.score % 800 === 0) {
-                // 连续生成2-3个怪物
-                const burstCount = Phaser.Math.Between(2, 3);
-                for (let i = 0; i < burstCount; i++) {
-                    this.time.delayedCall(i * 400, () => {
-                        this.spawnObstacle();
-                    });
-                }
             }
             // ===================================
 
@@ -319,6 +308,22 @@ export default class GameScene extends Phaser.Scene {
 
     spawnObstacle() {
         if (!this.isGameRunning || this.isGameOver) return;
+
+        // ========== 防止怪物堆叠 ==========
+        // 检查最右侧怪物的位置
+        let rightmostX = 0;
+        this.obstacles.children.iterate((child) => {
+            if (child && child.active && child.x > rightmostX) {
+                rightmostX = child.x;
+            }
+        });
+
+        // 如果最右侧怪物距离生成点太近（小于500像素），跳过本次生成
+        const minSafeDistance = 500;
+        if (rightmostX > 800 - minSafeDistance) {
+            return; // 不生成，等下一个周期
+        }
+        // ===================================
 
         // Randomly choose monster type
         // 0 = Demon (ground), 1 = Dragon (flying), 2 = Slime (ground)

@@ -203,17 +203,29 @@ function startGame() {
     music.play({ loop: true, volume: 0.5 });
 
     // Start obstacle spawning
-    this.time.addEvent({
-        delay: 2000,
-        callback: spawnObstacle,
-        callbackScope: this,
-        loop: true
-    });
+    spawnObstacle.call(this);
 }
 
 function spawnObstacle() {
     if (!isGameRunning || isGameOver) return;
 
+    // 1. Prevent Stacking: Check distance to the last obstacle
+    let lastObstacleX = 0;
+    obstacles.children.iterate(child => {
+        if (child.active && child.x > lastObstacleX) {
+            lastObstacleX = child.x;
+        }
+    });
+
+    // Minimum safe distance between obstacles (pixels)
+    // If the last obstacle is too close to the spawn point (850), wait a bit
+    const minDistance = 400; 
+    if (lastObstacleX > 800 - minDistance) {
+        this.time.delayedCall(100, spawnObstacle, [], this);
+        return;
+    }
+
+    // 2. Create Obstacle Texture if needed
     if (!this.textures.exists('obstacle')) {
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
         graphics.fillStyle(0xff0000);
@@ -221,10 +233,27 @@ function spawnObstacle() {
         graphics.generateTexture('obstacle', 30, 50);
     }
 
+    // 3. Dynamic Difficulty
+    // Score increases by ~60 per second. 
+    // Let's cap the difficulty increase at score 5000 (approx 1.5 mins)
+    const difficultyFactor = Math.min(score, 5000) / 5000; // 0.0 to 1.0
+
+    // Speed: -300 to -600
+    const currentSpeed = -300 - (300 * difficultyFactor);
+
     const obstacle = obstacles.create(850, 575, 'obstacle');
-    obstacle.setVelocityX(-300);
+    obstacle.setVelocityX(currentSpeed);
     obstacle.setImmovable(true);
     obstacle.body.allowGravity = false;
+
+    // 4. Schedule Next Spawn
+    // Delay: 1500-2500ms (easy) -> 800-1500ms (hard)
+    const minDelay = 1500 - (700 * difficultyFactor);
+    const maxDelay = 2500 - (1000 * difficultyFactor);
+    
+    const nextDelay = Phaser.Math.Between(minDelay, maxDelay);
+
+    this.time.delayedCall(nextDelay, spawnObstacle, [], this);
 }
 
 function hitObstacle(player, obstacle) {

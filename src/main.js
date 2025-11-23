@@ -9,7 +9,7 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 1000 },
-            debug: true  // Enable to see collision boxes
+            debug: false  // Enable to see collision boxes
         }
     },
     scene: [GameScene]
