@@ -310,24 +310,38 @@ export default class GameScene extends Phaser.Scene {
         if (!this.isGameRunning || this.isGameOver) return;
 
         // ========== 防止怪物堆叠 ==========
-        // 检查最右侧怪物的位置
+        // 检查最右侧怪物的位置和类型
         let rightmostX = 0;
+        let rightmostType = null;
         this.obstacles.children.iterate((child) => {
             if (child && child.active && child.x > rightmostX) {
                 rightmostX = child.x;
+                rightmostType = child.getData('monsterType');
             }
         });
 
-        // 如果最右侧怪物距离生成点太近（小于500像素），跳过本次生成
-        const minSafeDistance = 500;
+        // 先选择怪物类型
+        // 0 = Demon (ground), 1 = Dragon (flying), 2 = Slime (ground)
+        const monsterType = Phaser.Math.Between(0, 2);
+
+        // 智能间距：如果新怪物和上一个怪物高度不同，可以更近
+        let minSafeDistance;
+        const isNewMonsterFlying = (monsterType === 1);
+        const isLastMonsterFlying = (rightmostType === 1);
+
+        if (rightmostType !== null && isNewMonsterFlying !== isLastMonsterFlying) {
+            // 一个飞行一个地面，可以更近
+            minSafeDistance = 250;
+        } else {
+            // 同类型怪物，保持较长间距
+            minSafeDistance = 500;
+        }
+
+        // 如果最右侧怪物距离生成点太近，跳过本次生成
         if (rightmostX > 800 - minSafeDistance) {
             return; // 不生成，等下一个周期
         }
         // ===================================
-
-        // Randomly choose monster type
-        // 0 = Demon (ground), 1 = Dragon (flying), 2 = Slime (ground)
-        const monsterType = Phaser.Math.Between(0, 2);
 
         // Different Y positions for different monsters
         let yPos = 550; // Default ground level (Moved up from 625 to show full body)
